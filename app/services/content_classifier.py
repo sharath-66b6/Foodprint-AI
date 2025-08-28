@@ -1,4 +1,3 @@
-# app/services/content_classifier.py
 import asyncio
 import json
 import re
@@ -27,8 +26,8 @@ def _quick_text_heuristic_is_nonfood(text: str) -> bool:
     # if the user wrote exactly a short token, check keyword list
     if len(t.split()) == 1 and t in _NON_FOOD_KEYWORDS:
         return True
-    # if it is very short (<=3 chars) and not likely a dish
-    if len(t) <= 3 and not any(c.isdigit() for c in t):
+    # if it is very short (<3 chars) and not likely a dish
+    if len(t) < 3 and not any(c.isdigit() for c in t):
         return True
     return False
 

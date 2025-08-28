@@ -1,4 +1,3 @@
-# app/services/groq_client.py
 import os
 from dotenv import load_dotenv
 load_dotenv()
