@@ -142,21 +142,21 @@ async def classify_image_as_food(image_bytes: bytes, hint: Optional[str] = None)
     """
     snippet = base64.b64encode(image_bytes)[:1200].decode("utf-8")
     prompt = f"""
-You are a visual classifier. Return ONLY a JSON object with these keys:
-- action: one of ["accept","reject","ask_clarify"]
-- is_food: true/false
-- dish: string|null (a short dish name if is_food true)
-- contains_human: true/false
-- contains_objects: array of short labels describing prominent non-food objects if any (e.g. ["bus","phone","car"])
-- confidence: 0.0-1.0
-- message: short user-facing instruction (if rejecting ask user to upload a food dish)
+        You are a visual classifier. Return ONLY a JSON object with these keys:
+        - action: one of ["accept","reject","ask_clarify"]
+        - is_food: true/false
+        - dish: string|null (a short dish name if is_food true)
+        - contains_human: true/false
+        - contains_objects: array of short labels describing prominent non-food objects if any (e.g. ["bus","phone","car"])
+        - confidence: 0.0-1.0
+        - message: short user-facing instruction (if rejecting ask user to upload a food dish)
 
-Be conservative. If image likely contains a person, animal, vehicle, electronic device, building, or landscape (not a close-up of food), return action "reject". If it's ambiguous, return "ask_clarify". Do not try to invent ingredients here.
+        Be conservative. If image likely contains a person, animal, vehicle, electronic device, building, or landscape (not a close-up of food), return action "reject". If it's ambiguous, return "ask_clarify". Do not try to invent ingredients here.
 
-Base64-snippet (truncated): "{snippet}"
-Hint: "{hint or ''}"
-Respond only with the JSON object.
-"""
+        Base64-snippet (truncated): "{snippet}"
+        Hint: "{hint or ''}"
+        Respond only with the JSON object.
+        """
     raw = await _call_groq_for_classify(prompt)
     parsed = _extract_json_object_loose(raw)
     if not parsed:

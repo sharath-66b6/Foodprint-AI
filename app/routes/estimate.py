@@ -5,6 +5,7 @@ from typing import List, Optional, Any
 from ..services.ingredient_extractor import extract_ingredients_from_dish, extract_ingredients_from_image
 from ..utils.carbon import estimate_carbon
 from ..services.content_classifier import classify_text_as_food, classify_image_as_food
+from ..services.food_recognizer import predict_food
 import io
 
 router = APIRouter()
@@ -41,34 +42,37 @@ async def estimate_from_dish(payload: DishRequest):
 
 
 
+
 @router.post("/image", response_model=Any)
-async def estimate_from_image(image: UploadFile = File(...), hint: str = Form(None)):
+async def estimate_from_image(image: UploadFile = File(...), hint: Optional[str] = Form(None)):
     contents = await image.read()
     if not contents:
-        raise HTTPException(status_code=400, detail="empty image upload")
-
-    # CLASSIFY image first
-    classification = await classify_image_as_food(contents, hint=hint)
-    if classification["action"] == "reject":
-        # include object hints if present
-        objs = classification.get("contains_objects") or []
-        msg = classification["message"]
-        if objs:
-            msg = f"{msg} Detected: {', '.join(objs)}."
-        raise HTTPException(status_code=400, detail=msg)
-
-    if classification["action"] == "ask_clarify":
-        raise HTTPException(status_code=400, detail="Image unclear — please upload a clear photo of the dish or include the dish name as a hint.")
+        raise HTTPException(status_code=400, detail="Empty image upload")
 
     try:
-        # accepted: use classifier dish or hint to extract ingredients
-        detected_dish = classification.get("dish") or hint or "inferred-dish"
-        ingredients, _ = await extract_ingredients_from_image(contents, hint=detected_dish)
+        # Prefer hint if given
+        dish_name = predict_food(contents)  # returns None if not confident
+        if not dish_name:
+            dish_name = hint
+
+        if not dish_name:
+            raise HTTPException(
+                status_code=400,
+                detail="Image does not appear to be food. Please upload a dish photo or provide a hint."
+            )
+
+        ingredients = await extract_ingredients_from_dish(dish_name)
         ing_with_carbon, total = estimate_carbon(ingredients)
+
         return JSONResponse({
-            "dish": detected_dish,
+            "dish": dish_name,
             "estimated_carbon_kg": total,
             "ingredients": ing_with_carbon
         })
+
+    except HTTPException as e:
+        # Let our custom messages pass through
+        raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+

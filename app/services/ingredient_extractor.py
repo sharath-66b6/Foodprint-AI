@@ -1,8 +1,7 @@
 from typing import List, Dict, Tuple
 import json, re, asyncio
-from .groq_client import client   # our new groq client
+from .groq_client import client 
 
-# Choose a Groq model you have access to. Example: "llama3-8b-8192"
 GROQ_CHAT_MODEL = "llama3-8b-8192"
 
 def _call_llm_sync(prompt: str, max_tokens: int = 512, temperature: float = 0.2) -> str:
@@ -59,24 +58,24 @@ async def _call_llm(prompt: str) -> str:
 # Reuse the same robust extractor code from earlier (with retries)
 async def extract_ingredients_from_dish(dish: str, max_retries: int = 2) -> List[Dict]:
     base_prompt = f"""
-You are a helpful assistant. Given the dish name below, return ONLY a JSON array (no extra text).
-Each array element must be an object with:
-  - "name": the ingredient name (string)
-  - "percentage": approximate percent of the dish by weight (integer)
+        You are a helpful assistant. Given the dish name below, return ONLY a JSON array (no extra text).
+        Each array element must be an object with:
+        - "name": the ingredient name (string)
+        - "percentage": approximate percent of the dish by weight (integer)
 
-Make realistic guesses for a typical preparation of the dish. Ensure percentages sum to about 100.
+        Make realistic guesses for a typical preparation of the dish. Ensure percentages sum to about 100.
 
-Example:
-[
-  {{ "name": "Rice", "percentage": 60 }},
-  {{ "name": "Chicken", "percentage": 30 }},
-  {{ "name": "Oil", "percentage": 7 }},
-  {{ "name": "Spices", "percentage": 3 }}
-]
+        Example:
+        [
+        {{ "name": "Rice", "percentage": 60 }},
+        {{ "name": "Chicken", "percentage": 30 }},
+        {{ "name": "Oil", "percentage": 7 }},
+        {{ "name": "Spices", "percentage": 3 }}
+        ]
 
-Dish: "{dish}"
-Return only the JSON array.
-"""
+        Dish: "{dish}"
+        Return only the JSON array.
+        """
 
     attempt = 0
     while attempt <= max_retries:
@@ -103,11 +102,11 @@ Return only the JSON array.
         attempt += 1
         if attempt <= max_retries:
             clarifying = f"""
-Your previous response wasn't a useful ingredient breakdown. Please provide a typical ingredient breakdown for the dish "{dish}".
-Return ONLY a JSON array of objects: {{ "name": "<ingredient>", "percentage": <int> }}.
-List common ingredients (4-8 items) and ensure percentages sum to ~100.
-Do not return the dish name as an ingredient.
-"""
+                Your previous response wasn't a useful ingredient breakdown. Please provide a typical ingredient breakdown for the dish "{dish}".
+                Return ONLY a JSON array of objects: {{ "name": "<ingredient>", "percentage": <int> }}.
+                List common ingredients (4-8 items) and ensure percentages sum to ~100.
+                Do not return the dish name as an ingredient.
+                """
             await asyncio.sleep(0.4 * attempt)
             base_prompt = clarifying
             continue
